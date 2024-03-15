@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 import * as admin from 'firebase-admin';
 import * as fs from 'fs';
@@ -11,6 +12,11 @@ const data = JSON.parse(jsonData);
 const serviceAccountData = data.serviceAccount;
 
 @Module({
+    imports : [
+        ConfigModule.forRoot({
+            envFilePath : ['.env']
+        })
+    ],
     providers : [{
         provide : 'FirebaseAdmin' , 
         useFactory : () => {

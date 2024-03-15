@@ -70,8 +70,6 @@ export class DeviceService {
                 return null;
             }
 
-
-
         } catch (error) {
             return null;
         }
@@ -407,14 +405,18 @@ export class DeviceService {
 
                 const cameraState = deviceData["cameraState"]
                 const laserState = deviceData["laserState"]
+                const communicationState = deviceData["status"]
 
-                let hardwareState = { "cameraState" : cameraState , "laserState" : laserState} 
+                let hardwareState = { "cameraState" : cameraState , "laserState" : laserState , "status" : communicationState} 
                 
                 if( cameraState == null ){
-                hardwareState['cameraState']=true;
+                hardwareState['cameraState']="true";
                 }
                 if( laserState == null ){
-                    hardwareState['laserState']=true;
+                    hardwareState['laserState']="true";
+                }
+                if( communicationState == null){
+                    hardwareState['status'] = "disconnected"
                 }
 
                 return hardwareState
