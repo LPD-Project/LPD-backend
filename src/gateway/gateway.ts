@@ -64,18 +64,18 @@ export class GateWayWebSocket implements OnModuleInit {
                     }
                     deviceDisconnectedId = null 
                 } 
-                if (userDisconnectedId) {
+                // if (userDisconnectedId) {
                     
-                    // refresh every user device !
-                    let userDeviceOwn = this.clientMap[userDisconnectedId]
+                //     // refresh every user device !
+                //     let userDeviceOwn = this.clientMap[userDisconnectedId]
                     
-                    for ( let deviceSerialCode in userDeviceOwn){
-                        this.server.to(this.deviceMap[ deviceSerialCode ]).emit("killDevice");
-                    }
+                //     for ( let deviceSerialCode in userDeviceOwn){
+                //         this.server.to(this.deviceMap[ deviceSerialCode ]).emit("killDevice");
+                //     }
                     
-                    userDisconnectedId = null 
-                    userDeviceOwn = null 
-                } 
+                //     userDisconnectedId = null 
+                //     userDeviceOwn = null 
+                // } 
             });
 
         })
@@ -120,7 +120,7 @@ export class GateWayWebSocket implements OnModuleInit {
                 this.server.to(this.jetsonMap[jetsonSerialCode]).emit("OnCameraControl", { camera: this.cameraMap[jetsonSerialCode] });
             } 
 
-        }, 10 * 1000);
+        }, 60 * 1000);
         
     }
 

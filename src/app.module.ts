@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FirebaseModule } from './firebase/firebase.module';
@@ -17,7 +16,7 @@ import { DeviceService } from './device/device.service';
 
 
 @Module({
-  imports: [FirebaseModule, GatewayModule, AuthModule, UserModule, DeviceModule],
+  imports: [FirebaseModule, GatewayModule, AuthModule, UserModule, DeviceModule  ],
   controllers: [AppController, AuthController, UserController, DeviceController],
   providers: [AppService, AuthService, UserService, DeviceService],
 })
