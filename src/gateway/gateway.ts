@@ -20,7 +20,7 @@ export class GateWayWebSocket implements OnModuleInit {
     private offerMap: SdpMap = {};
 
     private deviceMap: Record<string, string> = {};
-    private jetsonMap: Record<string, string> = {};
+    private raspiMap: Record<string, string> = {};
     private hartbeatMap: Record<string, number> = {};
     private userMap: Record<string, string> = {};
 
@@ -38,8 +38,9 @@ export class GateWayWebSocket implements OnModuleInit {
                 console.log('Client disconnected');
 
                 let deviceDisconnectedId = getKeyByValue(this.deviceMap, socket.id)
-                let userDisconnectedId = getKeyByValue(this.userMap, socket.id)
-                let raspiDisconnecId = getKeyByValue(this.jetsonMap, socket.id)
+                let raspiDisconnecId = getKeyByValue(this.raspiMap, socket.id)
+                // let userDisconnectedId = getKeyByValue(this.userMap, socket.id)
+                // let raspiDisconnecId = getKeyByValue(this.raspiMap, socket.id)
 
                 if (deviceDisconnectedId) {
 
@@ -67,6 +68,9 @@ export class GateWayWebSocket implements OnModuleInit {
                         console.log("device status update , firebase error")
                     }
                     deviceDisconnectedId = null
+                } else if (raspiDisconnecId) {
+                    this.raspiMap[raspiDisconnecId] = null;
+                    delete this.raspiMap[deviceDisconnectedId]
                 }
                 // if (userDisconnectedId) {
 
@@ -117,11 +121,11 @@ export class GateWayWebSocket implements OnModuleInit {
                     }
                 }
             }
-            console.log( "interval run" )
+            console.log("interval run")
             // make this code on raspi when production  
-            // for (let jetsonSerialCode in this.jetsonMap) {
-            //     this.server.to(this.jetsonMap[jetsonSerialCode]).emit("OnLaserControl", { laser: this.laserMap[jetsonSerialCode] });
-            //     this.server.to(this.jetsonMap[jetsonSerialCode]).emit("OnCameraControl", { camera: this.cameraMap[jetsonSerialCode] });
+            // for (let jetsonSerialCode in this.raspiMap) {
+            //     this.server.to(this.raspiMap[jetsonSerialCode]).emit("OnLaserControl", { laser: this.laserMap[jetsonSerialCode] });
+            //     this.server.to(this.raspiMap[jetsonSerialCode]).emit("OnCameraControl", { camera: this.cameraMap[jetsonSerialCode] });
             // }
 
         }, 30 * 1000);
@@ -425,7 +429,7 @@ export class GateWayWebSocket implements OnModuleInit {
         console.log("cameraControl", Message);
         console.log("deviceSerialCode ", Message.device_serial_code);
         if (Message.device_serial_code) {
-            this.server.to(Message.device_serial_code).emit("onCameraControl", { camera: Message.camera });
+            this.server.to(this.raspiMap[Message.device_serial_code]).emit("onCameraControl", { camera: Message.camera });
             // Update the camera state
             this.cameraMap[Message.device_serial_code] = Message.camera;
 
@@ -456,7 +460,7 @@ export class GateWayWebSocket implements OnModuleInit {
 
         if (Message.device_serial_code) {
 
-            this.server.to(Message.device_serial_code).emit("onLaserControl", { laser: Message.laser });
+            this.server.to(this.raspiMap[Message.device_serial_code]).emit("onLaserControl", { laser: Message.laser });
             // Update the laser state
             this.laserMap[Message.device_serial_code] = Message.laser;
 
@@ -480,11 +484,30 @@ export class GateWayWebSocket implements OnModuleInit {
         }
     }
 
-    @SubscribeMessage('JetsonConnection')
+    @SubscribeMessage('RaspiConnection')
     async onRaspiConnectionn(@MessageBody() Message: any) {
         if (Message.device_serial_code) {
-            this.jetsonMap[Message.device_serial_code] = this.clientSocketId;
-            // add working status to Devices in Database  
+            this.raspiMap[Message.device_serial_code] = this.clientSocketId;
+            try {
+                const deviceQuerySnapshot = await this.firebaseAdmin.firestore()
+                    .collection('Devices')
+                    .where("deviceId", "==", Message.device_serial_code)
+                    .limit(1)
+                    .get()
+
+                if (!deviceQuerySnapshot.empty) {
+                    const deviceData = deviceQuerySnapshot.docs[0].data();
+                    this.laserMap[Message.device_serial_code] = deviceData['laserState']
+                    this.cameraMap[Message.device_serial_code] = deviceData['cameraState']
+                }
+
+                this.server.to(this.raspiMap[Message.device_serial_code]).emit("onLaserControl", { laser: this.laserMap[Message.device_serial_code]  });
+                this.server.to(this.raspiMap[Message.device_serial_code]).emit("onCameraControl", { camera: this.cameraMap[Message.device_serial_code] });
+
+            } catch (err) {
+                console.log("device status laser update , firebase error")
+            }
+
         } else {
             console.log('wrong type<device> of peer connection , raspi');
         }
@@ -493,7 +516,7 @@ export class GateWayWebSocket implements OnModuleInit {
     @SubscribeMessage('CommunicateUp')
     async onCommunicateUp(@MessageBody() Message: any) {
         if (Message.device_serial_code) {
-            // this.jetsonMap[Message.device_serial_code] = this.clientSocketId;
+            // this.raspiMap[Message.device_serial_code] = this.clientSocketId;
             // add working status to Devices in Database 
 
             try {
